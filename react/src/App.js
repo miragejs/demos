@@ -3,24 +3,49 @@ import './App.css';
 
 export default function App() {
   let [ users, setUsers ] = useState([]);
+  let [ isLoading, setIsLoading ] = useState(true);
 
   useEffect(() => {
+    let controller = new AbortController();
+    let signal = controller.signal;
+
     let fetchUsers = async function() {
-      let response = await fetch('/api/users');
-      let json = await response.json();
-      setUsers(json.users);
+      setIsLoading(true);
+      let response = await fetch('/api/users', { signal });
+
+      if (!signal.aborted) {
+        let json = await response.json();
+        setUsers(json.users);
+        setIsLoading(false);
+      }
     };
 
     fetchUsers();
+
+    return () => { controller.abort() };
   }, []);
 
   return (
-    <ul data-testid="users">
-      {users.map(user =>
-        <li key={user.id} data-testid={`user-${user.id}`}>
-          {user.name}
-        </li>
+    <div>
+      {isLoading ? (
+        <div data-testid="loading">
+          Loading users...
+        </div>
+      ) : (
+        users.length > 0 ? (
+          <ul data-testid="users">
+            {users.map(user =>
+              <li key={user.id} data-testid={`user-${user.id}`}>
+                {user.name}
+              </li>
+            )}
+          </ul>
+        ) : (
+          <div data-testid="no-users">
+            Couldn't find any users!
+          </div>
+        )
       )}
-    </ul>
+    </div>
   );
 }

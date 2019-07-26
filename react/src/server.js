@@ -1,6 +1,6 @@
-import { Server, Model, Factory } from '@miragejs/server';
+import { Server, Factory, Model } from '@miragejs/server';
 
-export default new Server({
+let server = new Server({
   models: {
     user: Model
   },
@@ -26,3 +26,5 @@ export default new Server({
     this.passthrough();
   }
 });
+
+export default server;
