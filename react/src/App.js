@@ -15,9 +15,9 @@ export default function App() {
   }, []);
 
   return (
-    <ul>
+    <ul data-testid="users">
       {users.map(user =>
-        <li key={user.id}>
+        <li key={user.id} data-testid={`user-${user.id}`}>
           {user.name}
         </li>
       )}
