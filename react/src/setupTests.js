@@ -5,24 +5,6 @@ import '@testing-library/react/cleanup-after-each';
 // this adds jest-dom's custom assertions
 import '@testing-library/jest-dom/extend-expect';
 
-// Mirage time!
-import server from "./server";
-
-// turn off console logs in jest
-server.logging = false;
-
-beforeEach(() => {
-  // reset any timing delays
-  server.timing = 0;
-
-  // reset the database for each test
-  server.db.emptyData();
-});
-
-// The mirage server is available in tests as `server`
-global.server = server;
-
-
 // There's a bug in react 16.8 that happens if a promsie resolves
 // during render we get an act warning. This issue is long, but
 // it highlights the situations where this happens.

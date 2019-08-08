@@ -1,14 +1,34 @@
 import React from 'react';
 import { render, waitForElement } from '@testing-library/react';
 import App from './App';
+import { startMirage } from './mirage';
+import { Response } from '@miragejs/server';
+
+let server;
+
+beforeEach(() => {
+  server = startMirage();
+});
+
+afterEach(() => {
+  server.shutdown();
+});
 
 it('renders', () => {
   const { getByTestId } = render(<App />);
   expect(getByTestId('loading')).toBeInTheDocument();
 });
 
+it('show a message if there are no users', async () => {
+  const { getByTestId } = render(<App />);
+
+  await waitForElement(() => getByTestId('no-users'))
+
+  expect(getByTestId('no-users')).toBeInTheDocument();
+});
+
 it('will show the name of a user', async () => {
-  global.server.create('user', { name: 'Alice' });
+  server.create('user', { name: 'Alice' });
 
   const { getByTestId } = render(<App />);
 
@@ -18,7 +38,7 @@ it('will show the name of a user', async () => {
 });
 
 it('will show a list of users', async () => {
-  global.server.createList('user', 5);
+  server.createList('user', 5);
 
   const { getByTestId } = render(<App />);
 
@@ -31,14 +51,14 @@ it('will show a list of users', async () => {
   expect(getByTestId('users')).toContainElement(getByTestId('user-5'));
 });
 
-it('show a message if there are no users', async () => {
-  global.server.db.loadData({ users: [] });
+test('it will show a message if the server errors', async () => {
+  server.get('/users', function() {
+    return new Response(500, {}, { error: 'The database is on vacation' });
+  });
 
-  const { getByTestId } = render(<App />);
+  const { getByTestId, debug } = render(<App />);
 
-  await waitForElement(() => getByTestId('no-users'))
-
-  expect(getByTestId('no-users')).toBeInTheDocument();
+  debug();
 });
 
 test('it will show a message while the users are loading', async () => {
@@ -48,7 +68,7 @@ test('it will show a message while the users are loading', async () => {
   // doesnt resolve. this will make the http request sit in a
   // a pending state, which means our react component will be
   // prementely showing its loading message.
-  global.server.get("/users", () => {
+  server.get("/users", () => {
     return new Promise(resolve => {
       respond = resolve;
     });
