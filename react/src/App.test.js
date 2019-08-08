@@ -1,8 +1,8 @@
-import React from 'react';
-import { render, waitForElement } from '@testing-library/react';
-import App from './App';
-import { startMirage } from './mirage';
-import { Response } from '@miragejs/server';
+import React from "react";
+import { render, waitForElement } from "@testing-library/react";
+import App from "./App";
+import { startMirage } from "./mirage";
+import { Response } from "@miragejs/server";
 
 let server;
 
@@ -14,54 +14,72 @@ afterEach(() => {
   server.shutdown();
 });
 
-it('renders', () => {
+it("renders", () => {
   const { getByTestId } = render(<App />);
-  expect(getByTestId('loading')).toBeInTheDocument();
+  expect(getByTestId("loading")).toBeInTheDocument();
 });
 
-it('show a message if there are no users', async () => {
+it("show a message if there are no users", async () => {
   const { getByTestId } = render(<App />);
 
-  await waitForElement(() => getByTestId('no-users'))
+  await waitForElement(() => getByTestId("no-users"));
 
-  expect(getByTestId('no-users')).toBeInTheDocument();
+  expect(getByTestId("no-users")).toBeInTheDocument();
 });
 
-it('will show the name of a user', async () => {
-  server.create('user', { name: 'Alice' });
-
-  const { getByTestId } = render(<App />);
-
-  await waitForElement(() => getByTestId('users'))
-
-  expect(getByTestId('user-1')).toHaveTextContent('Alice');
-});
-
-it('will show a list of users', async () => {
-  server.createList('user', 5);
+it("will show the name of a user", async () => {
+  server.create("user", { name: "Alice" });
 
   const { getByTestId } = render(<App />);
 
-  await waitForElement(() => getByTestId('users'))
+  await waitForElement(() => getByTestId("users"));
 
-  expect(getByTestId('users')).toContainElement(getByTestId('user-1'));
-  expect(getByTestId('users')).toContainElement(getByTestId('user-2'));
-  expect(getByTestId('users')).toContainElement(getByTestId('user-3'));
-  expect(getByTestId('users')).toContainElement(getByTestId('user-4'));
-  expect(getByTestId('users')).toContainElement(getByTestId('user-5'));
+  expect(getByTestId("user-1")).toHaveTextContent("Alice");
 });
 
-test('it will show a message if the server errors', async () => {
-  server.get('/users', function() {
-    return new Response(500, {}, { error: 'The database is on vacation' });
+it("will show a list of users", async () => {
+  server.createList("user", 5);
+
+  const { getByTestId } = render(<App />);
+
+  await waitForElement(() => getByTestId("users"));
+
+  expect(getByTestId("users")).toContainElement(getByTestId("user-1"));
+  expect(getByTestId("users")).toContainElement(getByTestId("user-2"));
+  expect(getByTestId("users")).toContainElement(getByTestId("user-3"));
+  expect(getByTestId("users")).toContainElement(getByTestId("user-4"));
+  expect(getByTestId("users")).toContainElement(getByTestId("user-5"));
+});
+
+test("it will show an error message from the server", async () => {
+  server.get("/users", function() {
+    return new Response(
+      500,
+      { "Content-Type": "application/json" },
+      { error: "The database is on vacation" }
+    );
   });
 
-  const { getByTestId, debug } = render(<App />);
+  const { getByTestId, getByText } = render(<App />);
 
-  debug();
+  await waitForElement(() => getByTestId("error"));
+
+  expect(getByText("The database is on vacation")).toBeInTheDocument();
 });
 
-test('it will show a message while the users are loading', async () => {
+test("it will show an error message if the server is not respond with json", async () => {
+  server.get("/users", function() {
+    return new Response(500, { "Content-Type": "text/plain" }, "Bad gateway");
+  });
+
+  const { getByTestId, getByText } = render(<App />);
+
+  await waitForElement(() => getByTestId("error"));
+
+  expect(getByText("The server was unreachable!")).toBeInTheDocument();
+});
+
+test("it will show a message while the users are loading", async () => {
   let respond;
 
   // here we're going to tell our server to return a promise that
@@ -74,7 +92,7 @@ test('it will show a message while the users are loading', async () => {
     });
   });
 
-  let { getByTestId } = render(<App />)
+  let { getByTestId } = render(<App />);
 
   expect(getByTestId("loading")).toBeInTheDocument();
 

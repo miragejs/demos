@@ -1,50 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import './App.css';
+import React, { useState, useEffect, useRef } from "react";
+import "./App.css";
 
 export default function App() {
-  let [ users, setUsers ] = useState([]);
-  let [ isLoading, setIsLoading ] = useState(true);
+  let [users, setUsers] = useState([]);
+  let [isLoading, setIsLoading] = useState(true);
+  let [error, setError] = useState(false);
+  let isMounted = useRef(true);
 
   useEffect(() => {
-    let controller = new AbortController();
-    let signal = controller.signal;
-
     let fetchUsers = async function() {
       setIsLoading(true);
-      let response = await fetch('/api/users', { signal });
+      let response = await fetch("/api/users");
 
-      if (!signal.aborted) {
-        let json = await response.json();
-        setUsers(json.users);
-        setIsLoading(false);
+      if (isMounted.current) {
+        try {
+          let json = await response.json();
+          if (response.ok) {
+            setUsers(json.users);
+          } else {
+            setError(json.error);
+          }
+        } catch {
+          setError("The server was unreachable!");
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchUsers();
 
-    return () => { controller.abort() };
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   return (
     <div>
       {isLoading ? (
-        <div data-testid="loading">
-          Loading users...
-        </div>
+        <div data-testid="loading">Loading users...</div>
+      ) : error ? (
+        <div data-testid="error">{error}</div>
+      ) : users.length > 0 ? (
+        <ul data-testid="users">
+          {users.map(user => (
+            <li key={user.id} data-testid={`user-${user.id}`}>
+              {user.name}
+            </li>
+          ))}
+        </ul>
       ) : (
-        users.length > 0 ? (
-          <ul data-testid="users">
-            {users.map(user =>
-              <li key={user.id} data-testid={`user-${user.id}`}>
-                {user.name}
-              </li>
-            )}
-          </ul>
-        ) : (
-          <div data-testid="no-users">
-            Couldn't find any users!
-          </div>
-        )
+        <div data-testid="no-users">Couldn't find any users!</div>
       )}
     </div>
   );

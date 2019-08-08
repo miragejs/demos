@@ -1,6 +1,6 @@
 import { Server, Factory, Model } from '@miragejs/server';
 
-let startMirage = function({ environment = 'testing' }) {
+let startMirage = function({ environment = 'test' } = {}) {
   let server = new Server({
     environment,
     models: {
