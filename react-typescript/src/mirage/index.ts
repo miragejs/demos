@@ -1,44 +1,38 @@
-import { createServer, Model, Factory } from "miragejs";
+import { createServer, Model, Factory, Server, ModelInstance } from "miragejs";
 import faker from "faker";
 import { Person } from "../fetchers";
+
+type FactoryParams<Data> = {
+  [key in keyof Partial<Data>]: () => Data[key];
+} & {
+  afterCreate: (person: ModelInstance<Data>, server: Server) => void;
+};
 
 export function makeServer({ environment = "test" }) {
   return createServer({
     environment,
-
     factories: {
-      person: Factory.extend<Partial<Person>>({
-        get firstName() {
-          return faker.name.firstName();
-        },
-        get lastName() {
-          return faker.name.lastName();
-        },
-        get name() {
-          return faker.name.findName(this.firstName, this.lastName);
-        },
-        get streetAddress() {
-          return faker.address.streetAddress();
-        },
-        get cityStateZip() {
-          return faker.fake(
+      person: Factory.extend<FactoryParams<Person>>({
+        firstName: () => faker.name.firstName(),
+        lastName: () => faker.name.lastName(),
+
+        streetAddress: () => faker.address.streetAddress(),
+        cityStateZip: () =>
+          faker.fake(
             "{{address.city}}, {{address.stateAbbr}} {{address.zipCode}}"
-          );
-        },
-        get phone() {
-          return faker.phone.phoneNumber();
-        },
-        get username() {
-          return faker.internet.userName(this.firstName, this.lastName);
-        },
-        get password() {
-          return faker.internet.password();
-        },
-        get email() {
-          return faker.internet.email(this.firstName, this.lastName);
-        },
-        get avatar() {
-          return faker.internet.avatar();
+          ),
+        phone: () => faker.phone.phoneNumber(),
+        password: () => faker.internet.password(),
+        avatar: () => faker.internet.avatar(),
+        afterCreate(person, server) {
+          person.update({
+            name: faker.name.findName(person.firstName, person.lastName),
+            username: faker.internet.userName(
+              person.firstName,
+              person.lastName
+            ),
+            email: faker.internet.email(person.firstName, person.lastName),
+          });
         },
       }),
     },
