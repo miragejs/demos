@@ -24,6 +24,7 @@ export function makeServer({ environment = "test" }) {
         phone: () => faker.phone.phoneNumber(),
         password: () => faker.internet.password(),
         avatar: () => faker.internet.avatar(),
+        /* We use afterCreate for creating properties that needs to be derived from other properties */
         afterCreate(person, server) {
           person.update({
             name: faker.name.findName(person.firstName, person.lastName),
